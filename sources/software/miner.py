@@ -37,11 +37,7 @@ def stats(count, starttime):
 
     # s should always be positive when this function is called, but
     # checking for robustness anyway
-    if s > 0:
-        stddev = rate / s**0.5
-    else:
-        stddev = 0
-
+    stddev = rate / s**0.5 if s > 0 else 0
     return "[%i accepted, %i failed, %.2f +/- %.2f Mhash/s]" % (count[0], count[1], rate, stddev)
 
 class Reader(Thread):
@@ -93,14 +89,12 @@ class Writer(Thread):
             rdata2 = self.block.decode('hex')[95:63:-1]
 
             rmid = self.midstate.decode('hex')[::-1]
-            
-            payload = rmid + rdata2
-            
-            ser.write(payload)
-            
-            result = golden.wait(askrate)
 
-            if result:
+            payload = rmid + rdata2
+
+            ser.write(payload)
+
+            if result := golden.wait(askrate):
                 golden.clear()
 
 class Submitter(Thread):
@@ -114,7 +108,7 @@ class Submitter(Thread):
         # This thread will be created upon every submit, as they may
         # come in sooner than the submits finish.
 
-        print("Block found on " + ctime())
+        print(f"Block found on {ctime()}")
 
         hrnonce = self.nonce[::-1].encode('hex')
 
@@ -122,7 +116,7 @@ class Submitter(Thread):
 
         try:
             result = bitcoin.getwork(data)
-            print("Upstream result: " + str(result))
+            print(f"Upstream result: {str(result)}")
         except:
             print("RPC send error")
             # a sensible boolean for stats
@@ -138,7 +132,7 @@ class Display_stats(Thread):
         self.starttime = time()
         self.daemon = True
 
-        print("Miner started on " + ctime())
+        print(f"Miner started on {ctime()}")
 
     def run(self):
         while True:
@@ -155,7 +149,7 @@ class Display_stats(Thread):
 
 golden = Event()
 
-url = 'http://' + user + ':' + password + '@' + host + ':' + http_port
+url = f'http://{user}:{password}@{host}:{http_port}'
 
 bitcoin = ServiceProxy(url)
 
